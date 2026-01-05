@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# OS misc
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build
+dist/
+build/
+
+# RULE AGENTS
+AGENT_RULES.md
