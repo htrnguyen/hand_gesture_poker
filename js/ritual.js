@@ -29,8 +29,6 @@ export class RitualManager {
         ];
     }
     
-
-
     getPinchDistance(hand) {
         const thumbTip = hand[4];
         const indexTip = hand[8];
@@ -113,8 +111,8 @@ export class RitualManager {
             this.avgPinchDistance = smoothingFactor * rawAvgPinch + (1 - smoothingFactor) * this.avgPinchDistance;
         }
 
-        const MIN_PINCH_FOR_SHUFFLE = 0.1;
-        const MAX_PINCH_FOR_REVEAL = 0.08;
+        const MIN_PINCH_FOR_SHUFFLE = 0.08;
+        const MAX_PINCH_FOR_REVEAL = 0.04;
 
         if (this.avgPinchDistance > MIN_PINCH_FOR_SHUFFLE && this.handsDetected) {
             if (this.pickedCards.length < 3) {
@@ -128,6 +126,7 @@ export class RitualManager {
             this.currentState = RITUAL_STATE.STOPPING;
             this.selectCardFromRitual();
         }
+
 
         if (this.currentState === RITUAL_STATE.PREPARING) {
             this.uiManager.updateGuide("Tách ngón cái và ngón trỏ (🤏) để bắt đầu tráo bài", "rgba(255,255,255,0.5)");
@@ -181,7 +180,6 @@ export class RitualManager {
             .easing(TWEEN.Easing.Cubic.InOut)
             .start();
             
-        // 3. Simple scale
         new TWEEN.Tween(card.scale)
             .to({ x: 1.5, y: 1.5, z: 1.5 }, 800)
             .easing(TWEEN.Easing.Cubic.InOut)
@@ -206,8 +204,10 @@ export class RitualManager {
             }
         });
 
+        let arrivedCount = 0;
         this.pickedCards.forEach((card, index) => {
             const finalPos = this.finalPositions[index];
+            card.userData.isRevealed = false;
             
             new TWEEN.Tween(card.position)
                 .to({ x: finalPos.x, y: finalPos.y, z: finalPos.z }, 1000)
@@ -226,15 +226,62 @@ export class RitualManager {
                 .easing(TWEEN.Easing.Back.Out)
                 .delay(index * 100)
                 .onComplete(() => {
-                    if (index === 2) {
-                        this.sceneManager.createExplosion(card.position);
-                        this.currentState = RITUAL_STATE.FINISHED;
-                        if (this.onRitualFinished) this.onRitualFinished();
-                        this.uiManager.updateGuide("Giơ 5 ngón tay để chơi lại", "#FFD700");
+                    arrivedCount++;
+                    if (arrivedCount === 3) {
+                        this.uiManager.updateGuide("Đã chia bài xong!", "#FFD700");
+                        
+                        setTimeout(() => {
+                            this.pickedCards.forEach((c, i) => {
+                                let delay = 0;
+                                if (i === 0) delay = 0;
+                                else if (i === 1) delay = 1000;
+                                else if (i === 2) delay = 3000;
+
+                                setTimeout(() => {
+                                    this.revealCard(c, i);
+                                }, delay);
+                            });
+                        }, 1000);
                     }
                 })
                 .start();
         });
+    }
+
+    revealCard(card, index) {
+        if (card.userData.isRevealed) return;
+        card.userData.isRevealed = true;
+        
+        const duration = 800;
+        
+        new TWEEN.Tween(card.rotation)
+            .to({ y: Math.PI / 2 }, duration / 2)
+            .easing(TWEEN.Easing.Cubic.In)
+            .onComplete(() => {
+                if (card.children && card.children[1]) {
+                    card.children[1].visible = true;
+                }
+                
+                new TWEEN.Tween(card.rotation)
+                    .to({ y: 0 }, duration / 2)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .start();
+            })
+            .start();
+            
+        new TWEEN.Tween(card.scale)
+            .to({ x: 1.2, y: 1.2, z: 1.2 }, duration / 2)
+            .yoyo(true)
+            .repeat(1)
+            .start();
+
+        const allRevealed = this.pickedCards.every(c => c.userData.isRevealed);
+        if (allRevealed) {
+            this.currentState = RITUAL_STATE.FINISHED;
+            if (this.onRitualFinished) this.onRitualFinished();
+            
+            this.uiManager.updateGuide("Giơ 5 ngón tay để chơi lại", "#FFD700");
+        }
     }
 
     updateAnimation(time) {

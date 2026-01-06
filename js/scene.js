@@ -45,7 +45,7 @@ export class TarotScene {
         const backTexture = textureLoader.load('assets/back.png');
         const backMaterial = new THREE.MeshStandardMaterial({
             map: backTexture,
-            side: THREE.FrontSide
+            side: THREE.DoubleSide
         });
 
         const createRoundedCardGeometry = (width, height, radius) => {
@@ -115,6 +115,7 @@ export class TarotScene {
                 }
                 
                 const frontMesh = new THREE.Mesh(geometry, frontMaterial);
+                frontMesh.visible = false; // Hide face initially
                 
                 backMesh.position.z = -0.005;
                 frontMesh.position.z = 0.005;

@@ -4,6 +4,7 @@ export const RITUAL_STATE = {
     SHUFFLING: 'shuffling',
     STOPPING: 'stopping',
     WAITING_FOR_NEXT: 'waiting',
+    SQUEEZING: 'squeezing',
     FINISHED: 'finished'
 };
 
